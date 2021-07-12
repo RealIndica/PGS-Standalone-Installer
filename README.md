@@ -1,5 +1,5 @@
 # PGS Standalone Installer
- Installer program for having a modified version of PoGo seperate to vanilla Pogo. 
+ ADB program for installing a modified version of PoGo seperate to vanilla Pogo. 
  
  I will add support for MacOS and Linux if needed.
 

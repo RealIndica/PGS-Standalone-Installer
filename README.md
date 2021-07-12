@@ -17,3 +17,5 @@
  Android 8.0.0 (API level 26) and Android 8.1.0 (API level 26): Settings > System > About Phone > Build Number
  
  Android 7.1 (API level 25) and lower: Settings > About Phone > Build Number
+ 
+ Tap the build number a bunch of times until it says developer mode enabled and it will be at the bottom of your settings app

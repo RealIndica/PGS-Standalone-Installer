@@ -171,6 +171,24 @@ namespace PGS_Standalone_Installer
             return url;
         }
 
+        private static bool isBetaAvailable()
+        {
+            HtmlWeb web = new HtmlWeb();
+            HtmlDocument doc = web.Load(hostURL);
+
+            bool ret = false;
+            foreach (HtmlNode link in doc.DocumentNode.SelectNodes("//a[@href]"))
+            {
+                if (link.InnerText.ToLower().Contains("beta"))
+                {
+                    ret = true;
+                    break;
+                }
+            }
+
+            return ret;
+        }
+
         private static string GetFilenameFromWebServer(string url)
         {
             string ret = "";
@@ -414,7 +432,16 @@ namespace PGS_Standalone_Installer
                     break;
                 case ConsoleKey.D2:
                     Console.Clear();
-                    await InstallBeta();
+                    if (isBetaAvailable())
+                    {
+                        await InstallBeta();
+                    }
+                    else
+                    {
+                        Console.WriteLine("Sorry, but the beta is currently unavailable!");
+                        System.Threading.Thread.Sleep(2000);
+                        goto START;
+                    }
                     break;
                 default:
                     goto START;

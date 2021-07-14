@@ -1,2 +1,0 @@
-C:\Users\Leonl\Documents\GitHub\PGS-Standalone-Installer\PGS Standalone Installer\bin\Release\net5.0\win-x64\publish\PGS Standalone Installer.pdb
-C:\Users\Leonl\Documents\GitHub\PGS-Standalone-Installer\PGS Standalone Installer\bin\Release\net5.0\win-x64\publish\PGS Standalone Installer.exe

@@ -45,6 +45,8 @@ namespace PGS_Standalone_Installer
 
         private static DeviceData targetDevice;
 
+        private static bool deviceConnected = false;
+
         private static StartServerResult startADBServer()
         {
             server = new AdbServer();
@@ -77,7 +79,7 @@ namespace PGS_Standalone_Installer
         {
             Process p = Process.GetProcessesByName("adb")[0];
             p.Kill();
-            Console.Write("Killed ADB Server!");
+            Console.Write("\r\nKilled ADB Server!");
         }
 
         private static bool isWindows()
@@ -161,10 +163,14 @@ namespace PGS_Standalone_Installer
             foreach (HtmlNode link in doc.DocumentNode.SelectNodes("//a[@href]"))
             {
                 string hrefValue = link.GetAttributeValue("href", string.Empty);
-                if (hrefValue.EndsWith(".apk"))
+
+                if (link.InnerText.ToLower().Contains("beta"))
                 {
-                    url = hrefValue;
-                    break;
+                    if (hrefValue.EndsWith(".apk"))
+                    {
+                        url = hrefValue;
+                        break;
+                    }
                 }
             }
 
@@ -392,19 +398,28 @@ namespace PGS_Standalone_Installer
             string tmpAPK = downloadedApkName.Replace(".apk", "");
         START:
             Console.Clear();
-            Console.WriteLine("The standalone version of PG Sharp is ready to be installed!\r\nWould you like to install it now? [y/n]");
-            ConsoleKeyInfo result = Console.ReadKey();
-            switch (result.Key)
+
+            if (deviceConnected)
             {
-                case ConsoleKey.Y:
-                    InstallToDevice();
-                    break;
-                case ConsoleKey.N:
-                    Console.Clear();
-                    Console.WriteLine("The APK is located in '" + dataDirectory + tmpAPK + "_standalone.apk'.\r\nYou can install it when you are ready.\r\n\r\nPress any key to exit.");                   
-                    break;
-                default:
-                    goto START;
+                Console.WriteLine("The standalone version of PG Sharp is ready to be installed!\r\nWould you like to install it now? [y/n]");
+                ConsoleKeyInfo result = Console.ReadKey();
+                switch (result.Key)
+                {
+                    case ConsoleKey.Y:
+                        InstallToDevice();
+                        break;
+                    case ConsoleKey.N:
+                        Console.Clear();
+                        Console.WriteLine("The APK is located in '" + dataDirectory + tmpAPK + "_standalone.apk'.\r\nYou can install it when you are ready.\r\n\r\nPress any key to exit.");
+                        break;
+                    default:
+                        goto START;
+                }
+            } 
+            else
+            {
+                Console.Clear();
+                Console.WriteLine("The APK is located in '" + dataDirectory + tmpAPK + "_standalone.apk'.\r\nYou can install it when you are ready.\r\n\r\nPress any key to exit.");
             }
             Console.Clear();
         }
@@ -421,7 +436,16 @@ namespace PGS_Standalone_Installer
         {
         START:
             Console.Clear();
-            Console.WriteLine("Please make sure you don't have the Samsung store version of PoGo installed before proceeding.");
+
+            if (deviceConnected)
+            {
+                Console.WriteLine("Please make sure you don't have the Samsung store version of PoGo installed before proceeding.");
+            }
+            else
+            {
+                Console.WriteLine("You have not connected a device, but you can still install the APK manually later.");
+            }
+
             Console.WriteLine("Would you like to install [1]Standard or [2]Beta version?");
             ConsoleKeyInfo result = Console.ReadKey();
             switch (result.Key)
@@ -490,8 +514,15 @@ namespace PGS_Standalone_Installer
 
             if (CheckADBDevices())
             {
+                deviceConnected = true;
                 await InstallerStart();
             }
+            else
+            {
+                deviceConnected = false;
+                await InstallerStart();
+            }
+
             Console.WriteLine("Press Any Key to Exit.");
             Console.ReadKey();
             killADBService();

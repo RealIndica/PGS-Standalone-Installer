@@ -1,5 +1,5 @@
 # PGS Standalone Installer
- ADB program for installing a modified version of PoGo seperate to vanilla Pogo. 
+ ADB program for installing a modified version of PoGo seperate to vanilla Pogo on Android. 
  
  I will add support for MacOS and Linux if needed.
 

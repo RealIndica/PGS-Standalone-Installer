@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using ShellProgressBar;
 using HtmlAgilityPack;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace PGS_Standalone_Installer
 {
@@ -255,6 +256,15 @@ namespace PGS_Standalone_Installer
             Console.Clear();
         }
 
+        private static async Task InstallbyURL(string url)
+        {
+            Console.WriteLine("Downloading PGSharp from URL . . .");
+            downloadedApkName = GetFilenameFromWebServer(GetFinalRedirect(url));
+            downloadedApk = tempDirectory + downloadedApkName;
+            await downloadFile(url, downloadedApk);
+            Console.Clear();
+        }
+
         private static void manageAPK(bool compile)
         {
             string APKEXEC = apktoolExecutable.Replace("\\", "//");
@@ -432,6 +442,13 @@ namespace PGS_Standalone_Installer
             Console.Clear();
         }
 
+        public static bool CheckURLValid(string URL)
+        {
+            string Pattern = @"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$";
+            Regex Rgx = new Regex(Pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            return Rgx.IsMatch(URL);
+        }
+
         private static async Task InstallerStart()
         {
         START:
@@ -446,7 +463,7 @@ namespace PGS_Standalone_Installer
                 Console.WriteLine("You have not connected a device, but you can still install the APK manually later.");
             }
 
-            Console.WriteLine("Would you like to install [1]Standard or [2]Beta version?");
+            Console.WriteLine("Would you like to install [1]Standard, [2]Beta version or [3]Install by Manual URL?");
             ConsoleKeyInfo result = Console.ReadKey();
             switch (result.Key)
             {
@@ -462,9 +479,26 @@ namespace PGS_Standalone_Installer
                     }
                     else
                     {
-                        Console.WriteLine("Sorry, but the beta is currently unavailable!");
+                        Console.WriteLine("Sorry, but the beta is currently unavailable on the website!\r\nIf the beta is in the Discord, use manual URL.");
                         System.Threading.Thread.Sleep(2000);
                         goto START;
+                    }
+                    break;
+                case ConsoleKey.D3:
+                    urlValidate:
+                    Console.Clear();
+                    Console.WriteLine("Enter PG Sharp APK URL :");
+                    string manURL = Console.ReadLine();
+                    if (CheckURLValid(manURL))
+                    {
+                        Console.Clear();
+                        await InstallbyURL(manURL);
+                    } else
+                    {
+                        Console.Clear();
+                        Console.WriteLine("Enter a valid URL!");
+                        System.Threading.Thread.Sleep(2000);
+                        goto urlValidate;
                     }
                     break;
                 default:

@@ -1,6 +1,8 @@
 # PGS Standalone Installer
  ADB program for installing a modified version of PoGo seperate to vanilla Pogo on Android. 
  
+ This also adds a custom network security config file for packet capture using tools such as Fiddler and HttpCanary
+ 
  I will add support for MacOS and Linux if needed.
 
 # Requirements

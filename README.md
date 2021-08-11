@@ -10,6 +10,10 @@
  
  Windows x64 
  
+ [Java](https://www.java.com/download/ie_manual.jsp)
+ 
+[.NET 5.0 Runtime](https://dotnet.microsoft.com/download/dotnet/5.0)
+ 
  USB Connection from your computer to your Android device
  
  

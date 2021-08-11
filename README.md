@@ -12,9 +12,9 @@
  
  Windows x64 
  
- USB Connection from your computer to your Android device
+ USB Connection from your computer to your Android device (reccomended)
  
- USB debugging enabled in developer options
+ USB debugging enabled in developer options (reccomended)
  
  
 # How to Enable Developer Options

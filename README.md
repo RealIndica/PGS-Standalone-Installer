@@ -6,15 +6,15 @@
  I will add support for MacOS and Linux if needed.
 
 # Requirements
- USB debugging enabled in developer options
- 
- Windows x64 
- 
  [Java](https://www.java.com/download/ie_manual.jsp)
  
 [.NET 5.0 Runtime](https://dotnet.microsoft.com/download/dotnet/5.0)
  
+ Windows x64 
+ 
  USB Connection from your computer to your Android device
+ 
+ USB debugging enabled in developer options
  
  
 # How to Enable Developer Options

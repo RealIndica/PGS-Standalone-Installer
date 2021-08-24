@@ -28,6 +28,7 @@ namespace PGS_Standalone_Installer
         private static string adbExecutable = dataDirectory + "platform-tools\\adb.exe";
         private static string apktoolExecutable = dataDirectory + "apktool.jar";
         private static string apksignerExecutable = dataDirectory + "apksigner.jar";
+        private static string apkzipAlignExecutable = dataDirectory + "zipalign.exe";
 
         private static string signCert = resourcesDirectory + "cert.pem";
         private static string signKey = resourcesDirectory + "key.pk8";
@@ -301,6 +302,41 @@ namespace PGS_Standalone_Installer
             Console.Clear();
         }
 
+        private static void zipAlign()
+        {
+            string ZIPALIGN = apkzipAlignExecutable.Replace("\\", "//");
+            string DATA = dataDirectory.Replace("\\", "//");
+            string tmpAPK = downloadedApkName.Replace(".apk", "");
+
+            string args = "-f -p 4 " + "\"" + DATA + tmpAPK + "_standalone.apk\" " + "\"" + DATA + tmpAPK + "_standalone_temp.apk\"";
+            Process process = new Process();
+            process.StartInfo.FileName = ZIPALIGN;
+            process.StartInfo.Arguments = args;
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.OutputDataReceived += new DataReceivedEventHandler(OutputHandler);
+            process.ErrorDataReceived += new DataReceivedEventHandler(OutputHandler);
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            process.WaitForExit();
+            Console.Clear();
+        }
+
+        private static void clearTemp(bool tempInName)
+        {
+            string tmpAPK = downloadedApkName.Replace(".apk", "");
+            if (!tempInName)
+            {
+                File.Delete(dataDirectory + tmpAPK + "_standalone.apk");
+            }
+            else
+            {
+                File.Delete(dataDirectory + tmpAPK + "_standalone_temp.apk");
+            }
+        }
+
         private static void signAPK()
         {
             string APKSIGN = apksignerExecutable.Replace("\\", "//");
@@ -311,7 +347,7 @@ namespace PGS_Standalone_Installer
 
             Process process = new Process();
             process.StartInfo.FileName = "java";
-            process.StartInfo.Arguments = "-jar \"" + APKSIGN + "\" sign --key \"" + tmpKey + "\" --cert \"" + tmpCert + "\" --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false --out \"" + DATA + tmpAPK + "_standalone.apk\" \"" + DATA + tmpAPK + "_standalone.apk\"";
+            process.StartInfo.Arguments = "-jar \"" + APKSIGN + "\" sign --key \"" + tmpKey + "\" --cert \"" + tmpCert + "\" --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false --out \"" + DATA + tmpAPK + "_standalone.apk\" \"" + DATA + tmpAPK + "_standalone_temp.apk\"";
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.RedirectStandardError = true;
@@ -371,7 +407,7 @@ namespace PGS_Standalone_Installer
             string oldPackageName = "com.nianticlabs.pokemongo";
             string newPackageName = "com.nianticlabs.pokemongo.ares";
 
-            replaceStringsInFile(decompiledAPKDirectory + "apktool.yml", "renameManifestPackage: null", "renameManifestPackage: " + newPackageName);
+            replaceStringsInFile(decompiledAPKDirectory + "apktool.yml", "doNotCompress:", "doNotCompress:\r\n- arsc");
             replaceStringsInFile(decompiledAPKDirectory + "AndroidManifest.xml", oldPackageName, newPackageName);
             replaceStringsInFile(decompiledAPKDirectory + "AndroidManifest.xml", "<application ", "<application android:networkSecurityConfig=\"@xml/network_security_config\" ");
             replaceStringsInFile(decompiledAPKDirectory + "res\\values\\strings.xml", "<string name=\"notification_title\">Pokémon GO</string>", "<string name=\"notification_title\">PG Sharp</string>");
@@ -509,10 +545,14 @@ namespace PGS_Standalone_Installer
             manageAPK(false);
             Console.WriteLine("Patching Files . . .");
             applyPatches();
-            Console.WriteLine("Recompiling  APK . . .");
+            Console.WriteLine("Recompiling  APK . . .");          
             manageAPK(true);
+            Console.WriteLine("Zip Align . . .");
+            zipAlign();
+            clearTemp(false);
             Console.WriteLine("Signing APK . . .");
             signAPK();
+            clearTemp(true);
             FinalizeInstall();
             Console.WriteLine("Cleaning up . . .");
             CleanUp();

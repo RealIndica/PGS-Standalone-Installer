@@ -409,6 +409,7 @@ namespace PGS_Standalone_Installer
 
             replaceStringsInFile(decompiledAPKDirectory + "apktool.yml", "doNotCompress:", "doNotCompress:\r\n- arsc");
             replaceStringsInFile(decompiledAPKDirectory + "AndroidManifest.xml", oldPackageName, newPackageName);
+            replaceStringsInFile(decompiledAPKDirectory + "AndroidManifest.xml", "com.nianticlabs.platform.permission.LOGIN_PROVIDER", "com.nianticlabs.ares.platform.permission.LOGIN_PROVIDER");
             replaceStringsInFile(decompiledAPKDirectory + "AndroidManifest.xml", "<application ", "<application android:networkSecurityConfig=\"@xml/network_security_config\" ");
             replaceStringsInFile(decompiledAPKDirectory + "res\\values\\strings.xml", "<string name=\"notification_title\">Pokémon GO</string>", "<string name=\"notification_title\">PG Sharp</string>");
             replaceStringsInFile(decompiledAPKDirectory + "res\\values\\strings.xml", "<string name=\"app_name\">Pokémon GO</string>", "<string name=\"app_name\">PG Sharp</string>");
@@ -426,6 +427,78 @@ namespace PGS_Standalone_Installer
                 }
             }
             Console.Clear();
+        }
+
+        private static int[] FindBytes(byte[] src, byte[] find)
+        {
+            List<int> index = new List<int>();
+            int matchIndex = 0;
+            int results = 0;
+
+            for (int i = 0; i < src.Length; i++)
+            {
+                if (src[i] == find[matchIndex])
+                {
+                    if (matchIndex == (find.Length - 1))
+                    {
+                        results++;
+                        index.Add(i - matchIndex);
+                    }
+                    matchIndex++;
+                }
+                else if (src[i] == find[0])
+                {
+                    matchIndex = 1;
+                }
+                else
+                {
+                    matchIndex = 0;
+                }
+            }
+            return index.ToArray();
+        }
+
+        public static byte[] _byteReplace(byte[] src, byte[] search, byte[] repl)
+        {
+            byte[] dst = null;
+            byte[] temp = null;
+            int[] index = FindBytes(src, search);
+
+            for (int i = 0; i < index.Length; i++)
+            {
+
+                while (index[i] >= 0)
+                {
+                    if (temp == null)
+                    {
+                        temp = src;
+                    }
+                    else
+                    {
+                        temp = dst;
+                    }
+
+                    dst = new byte[temp.Length - search.Length + repl.Length];
+                    Buffer.BlockCopy(temp, 0, dst, 0, index[i]);
+                    Buffer.BlockCopy(repl, 0, dst, index[i], repl.Length);
+                    Buffer.BlockCopy(temp, index[i] + search.Length, dst, index[i] + repl.Length, temp.Length - (index[i] + search.Length));
+                    index = FindBytes(dst, search);
+                }
+            }
+            return dst;
+        }
+
+        private static void replaceBytes(byte[] oldBytes, byte[] newBytes, string File)
+        {
+            byte[] libMainBytes = System.IO.File.ReadAllBytes(File);
+            byte[] newLibMainBytes = _byteReplace(libMainBytes, oldBytes, newBytes);
+            System.IO.File.WriteAllBytes(File, newLibMainBytes);
+        }
+
+        private static void applyBytePatches()
+        {
+            byte[] targetBytes = { 0x63, 0x6F, 0x6D, 0x2E, 0x6E, 0x69, 0x61, 0x6E, 0x74, 0x69, 0x63, 0x6C, 0x61, 0x62, 0x73, 0x2E, 0x70, 0x6F, 0x6B, 0x65, 0x6D, 0x6F, 0x6E, 0x67, 0x6F };
+            byte[] newBytes = { 0x63, 0x6F, 0x6D, 0x2E, 0x6E, 0x69, 0x61, 0x6E, 0x74, 0x69, 0x63, 0x6C, 0x61, 0x62, 0x73, 0x2E, 0x70, 0x6F, 0x6B, 0x65, 0x6D, 0x6F, 0x6E, 0x67, 0x6F, 0x2E, 0x61, 0x72, 0x65, 0x73 };
         }
 
         private static void InstallToDevice()

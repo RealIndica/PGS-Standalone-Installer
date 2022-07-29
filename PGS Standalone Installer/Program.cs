@@ -15,6 +15,7 @@ using ShellProgressBar;
 using HtmlAgilityPack;
 using System.Linq;
 using System.Text.RegularExpressions;
+using CG.Web.MegaApiClient;
 
 namespace PGS_Standalone_Installer
 {
@@ -40,7 +41,8 @@ namespace PGS_Standalone_Installer
         private static string downloadURL = hostURL + "download";
         private static string betaDownloadURL;
 
-        private static WebClient webClient;
+        private static System.Net.WebClient webClient;
+        private static MegaApiClient megaClient;
 
         private static AdbServer server;
         private static AdbClient client;
@@ -48,6 +50,7 @@ namespace PGS_Standalone_Installer
         private static DeviceData targetDevice;
 
         private static bool deviceConnected = false;
+        private static bool megaDownload = false;
 
         private static StartServerResult startADBServer()
         {
@@ -98,8 +101,9 @@ namespace PGS_Standalone_Installer
 
         public static string GetFinalRedirect(string url)
         {
-            if (string.IsNullOrWhiteSpace(url))
-                return url;
+            if (url.ToLower().Contains("mega.nz")) { megaDownload = true;  return url; }
+
+            if (string.IsNullOrWhiteSpace(url)) { return url; };
 
             int maxRedirCount = 8;  // prevent infinite loops
             string newUrl = url;
@@ -172,6 +176,11 @@ namespace PGS_Standalone_Installer
                     {
                         url = hrefValue;
                         break;
+                    } 
+                    else if (hrefValue.ToLower().Contains("mega.nz"))
+                    {
+                        url = hrefValue;
+                        break;
                     }
                 }
             }
@@ -200,7 +209,15 @@ namespace PGS_Standalone_Installer
         private static string GetFilenameFromWebServer(string url)
         {
             string ret = "";
-            ret = url.Substring(url.LastIndexOf('/') + 1);
+            if (megaDownload)
+            {
+                INode node = megaClient.GetNodeFromLink(new Uri(url));
+                ret = node.Name;
+            }
+            else
+            {
+                ret = url.Substring(url.LastIndexOf('/') + 1);
+            }
             return ret;
         }
 
@@ -224,17 +241,39 @@ namespace PGS_Standalone_Installer
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
-            using (ProgressBar pbar = new ProgressBar(100, "0.00 kb/s"))
+            if (!megaDownload)
             {
-                pbar.ForegroundColor = ConsoleColor.White;
-                webClient.DownloadProgressChanged += (s, e) =>
-                {                   
-                    IProgress<float> prog = pbar.AsProgress<float>();                
-                    prog.Report((float)e.ProgressPercentage / 100);
-                    pbar.Message = string.Format("{0} kb/s", (e.BytesReceived / 1024d / sw.Elapsed.TotalSeconds).ToString("0.00"));
-                };
-                await webClient.DownloadFileTaskAsync(new Uri(finalURL), fileName);
+                using (ProgressBar pbar = new ProgressBar(100, "0.00 kb/s"))
+                {
+                    pbar.ForegroundColor = ConsoleColor.White;
+                    webClient.DownloadProgressChanged += (s, e) =>
+                    {
+                        IProgress<float> prog = pbar.AsProgress<float>();
+                        prog.Report((float)e.ProgressPercentage / 100);
+                        pbar.Message = string.Format("{0} kb/s", (e.BytesReceived / 1024d / sw.Elapsed.TotalSeconds).ToString("0.00"));
+                    };
+                    await webClient.DownloadFileTaskAsync(new Uri(finalURL), fileName);
+                }
+            } 
+            else
+            {
+                INode node = await megaClient.GetNodeFromLinkAsync(new Uri(finalURL));
+                long bytesRec = 0;
+                long fileSize = node.Size;
+                using (ProgressBar pbar = new ProgressBar(100, "0.00 kb/s"))
+                {
+                    pbar.ForegroundColor = ConsoleColor.White;
+                    IProgress<double> progress = new Progress<double>(s =>
+                    {
+                        IProgress<float> prog = pbar.AsProgress<float>();
+                        prog.Report((float)(s / 100));
+                        bytesRec = (long)((s / 100) * fileSize);
+                        pbar.Message = string.Format("{0} kb/s", (bytesRec / 1024d / sw.Elapsed.TotalSeconds).ToString("0.00"));
+                    });
+                    await megaClient.DownloadFileAsync(node, fileName, progress);
+                }               
             }
+
             sw.Stop();
             sw.Reset();
         }
@@ -640,7 +679,10 @@ namespace PGS_Standalone_Installer
                 Console.WriteLine("This program is untested on your operating system!");
             }
 
-            webClient = new WebClient();
+            webClient = new System.Net.WebClient();
+            megaClient = new MegaApiClient();
+            await megaClient.LoginAnonymousAsync();
+
             betaDownloadURL = getBetaURL();
 
             Console.WriteLine("Starting ADB Server . . .");

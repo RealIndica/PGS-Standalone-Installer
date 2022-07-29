@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.11.34" />
+    <PackageReference Include="MegaApiClient" Version="1.10.2" />
     <PackageReference Include="SharpAdbClient" Version="2.3.23" />
     <PackageReference Include="ShellProgressBar" Version="5.1.0" />
   </ItemGroup>
